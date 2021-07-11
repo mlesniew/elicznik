@@ -11,18 +11,18 @@ username = 'TAURON_USERNAME'
 password = 'TAURON_PASSWORD'
 meter_id = TAURON_ENERGY_METER_ID
 
-payload = { 
+payload = {
                 'username': username,
                 'password': password ,
                 'service': 'https://elicznik.tauron-dystrybucja.pl'
 }
 
-url = 'https://logowanie.tauron-dystrybucja.pl/login'
-charturl = 'https://elicznik.tauron-dystrybucja.pl/index/charts'
-headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0'} 
+LOGIN_URL = 'https://logowanie.tauron-dystrybucja.pl/login'
+CHART_URL = 'https://elicznik.tauron-dystrybucja.pl/index/charts'
 
+
+# Workaround for https://github.com/psf/requests/issues/4775
 class TLSAdapter(adapters.HTTPAdapter):
-
     def init_poolmanager(self, connections, maxsize, block=False):
         """Create and initialize the urllib3 PoolManager."""
         ctx = ssl.create_default_context()
@@ -37,19 +37,20 @@ class TLSAdapter(adapters.HTTPAdapter):
 session = requests.session()
 session.mount('https://', TLSAdapter())
 
-p = session.request("POST", url, data=payload, headers=headers)
-p = session.request("POST", url, data=payload, headers=headers)
+p = session.get(LOGIN_URL)
+p = session.post(LOGIN_URL, data=payload)
+
 
 chart = {
-	        #change timedelta to get data from another days (1 for yesterday)
-                "dane[chartDay]": (datetime.datetime.now() - datetime.timedelta(1)).strftime('%d.%m.%Y'),
-                "dane[paramType]": "day",
-                "dane[smartNr]": meter_id,
-	        #comment if don't want generated energy data in JSON output:
-                "dane[checkOZE]": "on"
-}
+        #change timedelta to get data from another days (1 for yesterday)
+        "dane[chartDay]": (datetime.datetime.now() - datetime.timedelta(1)).strftime('%d.%m.%Y'),
+        "dane[paramType]": "day",
+        "dane[smartNr]": meter_id,
+        #comment if don't want generated energy data in JSON output:
+        "dane[checkOZE]": "on"
+        }
 
-r = session.request("POST", charturl, data=chart, headers=headers)
+r = session.post(CHART_URL, data=chart)
 print(r.text)
 
 #Optionally write JSON to file
