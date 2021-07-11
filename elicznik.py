@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-import argparse
-import requests
-from requests import adapters
-import ssl
 from urllib3 import poolmanager
+import argparse
 import datetime
+import ssl
+
+import requests
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("username")
@@ -25,7 +26,7 @@ CHART_URL = 'https://elicznik.tauron-dystrybucja.pl/index/charts'
 
 
 # Workaround for https://github.com/psf/requests/issues/4775
-class TLSAdapter(adapters.HTTPAdapter):
+class TLSAdapter(requests.adapters.HTTPAdapter):
     def init_poolmanager(self, connections, maxsize, block=False):
         """Create and initialize the urllib3 PoolManager."""
         ctx = ssl.create_default_context()
