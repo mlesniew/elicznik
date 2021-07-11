@@ -1,19 +1,22 @@
 #!/usr/bin/env python
 
+import argparse
 import requests
 from requests import adapters
 import ssl
 from urllib3 import poolmanager
 import datetime
 
-#Add login details & meter ID here:
-username = 'TAURON_USERNAME'
-password = 'TAURON_PASSWORD'
-meter_id = TAURON_ENERGY_METER_ID
+parser = argparse.ArgumentParser()
+parser.add_argument("username")
+parser.add_argument("password")
+parser.add_argument("meter_id")
+
+args = parser.parse_args()
 
 payload = {
-                'username': username,
-                'password': password ,
+                'username': args.username,
+                'password': args.password,
                 'service': 'https://elicznik.tauron-dystrybucja.pl'
 }
 
@@ -45,7 +48,7 @@ chart = {
         #change timedelta to get data from another days (1 for yesterday)
         "dane[chartDay]": (datetime.datetime.now() - datetime.timedelta(1)).strftime('%d.%m.%Y'),
         "dane[paramType]": "day",
-        "dane[smartNr]": meter_id,
+        "dane[smartNr]": args.meter_id,
         #comment if don't want generated energy data in JSON output:
         "dane[checkOZE]": "on"
         }
