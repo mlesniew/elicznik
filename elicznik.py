@@ -8,15 +8,6 @@ import ssl
 import requests
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("username")
-parser.add_argument("password")
-parser.add_argument("meter_id")
-
-args = parser.parse_args()
-
-payload = {"username": args.username, "password": args.password, "service": "https://elicznik.tauron-dystrybucja.pl"}
-
 LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
 CHART_URL = "https://elicznik.tauron-dystrybucja.pl/index/charts"
 
@@ -32,25 +23,45 @@ class TLSAdapter(requests.adapters.HTTPAdapter):
         )
 
 
-session = requests.session()
-session.mount("https://", TLSAdapter())
+class Session(requests.Session):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mount("https://", TLSAdapter())
 
-p = session.get(LOGIN_URL)
-p = session.post(LOGIN_URL, data=payload)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("username")
+    parser.add_argument("password")
+    parser.add_argument("meter_id")
+
+    args = parser.parse_args()
+
+    session = Session()
+
+    resp = session.get(LOGIN_URL)
+    resp = session.post(
+        LOGIN_URL,
+        data={
+            "username": args.username,
+            "password": args.password,
+            "service": "https://elicznik.tauron-dystrybucja.pl",
+        },
+    )
+
+    resp = session.post(
+        CHART_URL,
+        data={
+            # change timedelta to get data from another days (1 for yesterday)
+            "dane[chartDay]": (datetime.datetime.now() - datetime.timedelta(1)).strftime("%d.%m.%Y"),
+            "dane[paramType]": "day",
+            "dane[smartNr]": args.meter_id,
+            # comment if don't want generated energy data in JSON output:
+            "dane[checkOZE]": "on",
+        },
+    )
+    print(resp.text)
 
 
-chart = {
-    # change timedelta to get data from another days (1 for yesterday)
-    "dane[chartDay]": (datetime.datetime.now() - datetime.timedelta(1)).strftime("%d.%m.%Y"),
-    "dane[paramType]": "day",
-    "dane[smartNr]": args.meter_id,
-    # comment if don't want generated energy data in JSON output:
-    "dane[checkOZE]": "on",
-}
-
-r = session.post(CHART_URL, data=chart)
-print(r.text)
-
-# Optionally write JSON to file
-# with open('file.json', 'wb') as f:
-#    f.write(r.content)
+if __name__ == "__main__":
+    main()
