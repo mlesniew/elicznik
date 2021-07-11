@@ -34,6 +34,10 @@ def main():
     parser.add_argument("username")
     parser.add_argument("password")
     parser.add_argument("meter_id")
+    parser.add_argument("date",
+                        nargs="?",
+                        type=lambda arg: datetime.datetime.strptime(arg, "%d.%m.%Y").date(),
+                        default=datetime.date.today() - datetime.timedelta(days=1))
 
     args = parser.parse_args()
 
@@ -52,8 +56,7 @@ def main():
     resp = session.post(
         CHART_URL,
         data={
-            # change timedelta to get data from another days (1 for yesterday)
-            "dane[chartDay]": (datetime.datetime.now() - datetime.timedelta(1)).strftime("%d.%m.%Y"),
+            "dane[chartDay]": args.date.strftime("%d.%m.%Y"),
             "dane[paramType]": "day",
             "dane[smartNr]": args.meter_id,
             # comment if don't want generated energy data in JSON output:
