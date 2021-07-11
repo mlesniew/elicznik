@@ -2,10 +2,13 @@
 
 from urllib3 import poolmanager
 import argparse
+import csv
 import datetime
 import ssl
+import sys
 
 import requests
+import tabulate
 
 
 LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
@@ -29,8 +32,19 @@ class Session(requests.Session):
         self.mount("https://", TLSAdapter())
 
 
+def get_stats(data):
+    for element in data:
+        timestamp = datetime.datetime.strptime(element["Date"], "%Y-%m-%d").replace(hour=int(element["Hour"]) - 1)
+        timestamp += datetime.timedelta(hours=1)
+        value = element.get("EC")
+        yield timestamp, value
+
+
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--format",
+                        choices=["raw", "table", "csv"],
+                        default="table")
     parser.add_argument("username")
     parser.add_argument("password")
     parser.add_argument("meter_id")
@@ -59,11 +73,27 @@ def main():
             "dane[chartDay]": args.date.strftime("%d.%m.%Y"),
             "dane[paramType]": "day",
             "dane[smartNr]": args.meter_id,
-            # comment if don't want generated energy data in JSON output:
             "dane[checkOZE]": "on",
         },
     )
-    print(resp.text)
+
+    if args.format == "raw":
+        print(resp.text)
+        return
+
+    data = resp.json()
+
+    consumed = dict(get_stats(data["dane"]["chart"].values()))
+    produced = dict(get_stats(data["dane"]["OZE"].values()))
+    result = sorted((timestamp, float(consumed.get(timestamp)), float(produced.get(timestamp)))
+                    for timestamp in set(consumed) | set(produced))
+
+    if args.format == "table":
+        print(tabulate.tabulate(result, headers=["timestamp", "consumed", "produced"]))
+    else:
+        writer = csv.writer(sys.stdout)
+        for timestamp, consumed, produced in result:
+            writer.writerow((timestamp.isoformat(), consumed, produced))
 
 
 if __name__ == "__main__":
