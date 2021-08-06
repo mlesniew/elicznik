@@ -79,13 +79,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--format",
                         choices=["raw", "table", "csv"],
-                        default="table")
-    parser.add_argument("username")
-    parser.add_argument("password")
+                        default="table",
+                        help="Specify the output format")
+    parser.add_argument("username",
+                        help="tauron-dystrybucja.pl user name")
+    parser.add_argument("password",
+                        help="tauron-dystrybucja.pl password")
     parser.add_argument("date",
                         nargs="?",
                         type=lambda arg: datetime.datetime.strptime(arg, "%d.%m.%Y").date(),
-                        default=datetime.date.today() - datetime.timedelta(days=1))
+                        default=datetime.date.today() - datetime.timedelta(days=1),
+                        help="Date of data to be retrieved")
 
     args = parser.parse_args()
 
