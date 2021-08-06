@@ -4,15 +4,12 @@ from urllib3 import poolmanager
 import argparse
 import csv
 import datetime
+import json
 import ssl
 import sys
 
 import requests
 import tabulate
-
-
-LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
-CHART_URL = "https://elicznik.tauron-dystrybucja.pl/index/charts"
 
 
 # Workaround for https://github.com/psf/requests/issues/4775
@@ -32,12 +29,52 @@ class Session(requests.Session):
         self.mount("https://", TLSAdapter())
 
 
-def get_stats(data):
-    for element in data:
-        timestamp = datetime.datetime.strptime(element["Date"], "%Y-%m-%d").replace(hour=int(element["Hour"]) - 1)
-        timestamp += datetime.timedelta(hours=1)
-        value = element.get("EC")
-        yield timestamp, value
+class ELicznik:
+    LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
+    CHART_URL = "https://elicznik.tauron-dystrybucja.pl/index/charts"
+
+    def __init__(self, username, password, meter_id):
+        self.username = username
+        self.password = password
+        self.meter_id = meter_id
+
+    def login(self):
+        self.session = Session()
+        self.session.get(self.LOGIN_URL)
+        self.session.post(
+            self.LOGIN_URL,
+            data={
+                "username": self.username,
+                "password": self.password,
+                "service": "https://elicznik.tauron-dystrybucja.pl",
+            },
+        )
+
+    def get_raw_readings(self, date):
+        return self.session.post(
+            self.CHART_URL,
+            data={
+                "dane[chartDay]": date.strftime("%d.%m.%Y"),
+                "dane[paramType]": "day",
+                "dane[smartNr]": self.meter_id,
+                "dane[checkOZE]": "on",
+            },
+        ).json()
+
+    @staticmethod
+    def _extract_values_with_timestamps(data):
+        for element in data:
+            timestamp = datetime.datetime.strptime(element["Date"], "%Y-%m-%d").replace(hour=int(element["Hour"]) - 1)
+            timestamp += datetime.timedelta(hours=1)
+            value = element.get("EC")
+            yield timestamp, value
+
+    def get_readings(self, date):
+        data = self.get_raw_readings(date)
+        consumed = dict(self._extract_values_with_timestamps(data["dane"]["chart"].values()))
+        produced = dict(self._extract_values_with_timestamps(data["dane"]["OZE"].values()))
+        return sorted((timestamp, float(consumed.get(timestamp)), float(produced.get(timestamp)))
+                       for timestamp in set(consumed) | set(produced))
 
 
 def main():
@@ -55,38 +92,14 @@ def main():
 
     args = parser.parse_args()
 
-    session = Session()
-
-    resp = session.get(LOGIN_URL)
-    resp = session.post(
-        LOGIN_URL,
-        data={
-            "username": args.username,
-            "password": args.password,
-            "service": "https://elicznik.tauron-dystrybucja.pl",
-        },
-    )
-
-    resp = session.post(
-        CHART_URL,
-        data={
-            "dane[chartDay]": args.date.strftime("%d.%m.%Y"),
-            "dane[paramType]": "day",
-            "dane[smartNr]": args.meter_id,
-            "dane[checkOZE]": "on",
-        },
-    )
+    elicznik = ELicznik(args.username, args.password, args.meter_id)
+    elicznik.login()
 
     if args.format == "raw":
-        print(resp.text)
+        print(elicznik.get_raw_readings(args.date))
         return
 
-    data = resp.json()
-
-    consumed = dict(get_stats(data["dane"]["chart"].values()))
-    produced = dict(get_stats(data["dane"]["OZE"].values()))
-    result = sorted((timestamp, float(consumed.get(timestamp)), float(produced.get(timestamp)))
-                    for timestamp in set(consumed) | set(produced))
+    result = elicznik.get_readings(args.date)
 
     if args.format == "table":
         print(tabulate.tabulate(result, headers=["timestamp", "consumed", "produced"]))
