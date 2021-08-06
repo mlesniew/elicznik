@@ -33,10 +33,9 @@ class ELicznik:
     LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
     CHART_URL = "https://elicznik.tauron-dystrybucja.pl/index/charts"
 
-    def __init__(self, username, password, meter_id):
+    def __init__(self, username, password):
         self.username = username
         self.password = password
-        self.meter_id = meter_id
 
     def login(self):
         self.session = Session()
@@ -56,7 +55,6 @@ class ELicznik:
             data={
                 "dane[chartDay]": date.strftime("%d.%m.%Y"),
                 "dane[paramType]": "day",
-                "dane[smartNr]": self.meter_id,
                 "dane[checkOZE]": "on",
             },
         ).json()
@@ -84,7 +82,6 @@ def main():
                         default="table")
     parser.add_argument("username")
     parser.add_argument("password")
-    parser.add_argument("meter_id")
     parser.add_argument("date",
                         nargs="?",
                         type=lambda arg: datetime.datetime.strptime(arg, "%d.%m.%Y").date(),
@@ -92,7 +89,7 @@ def main():
 
     args = parser.parse_args()
 
-    elicznik = ELicznik(args.username, args.password, args.meter_id)
+    elicznik = ELicznik(args.username, args.password)
     elicznik.login()
 
     if args.format == "raw":
