@@ -53,8 +53,12 @@ class ELicznik:
         return self.session.post(
             self.CHART_URL,
             data={
-                "dane[chartDay]": date.strftime("%d.%m.%Y"),
-                "dane[paramType]": "day",
+                # "dane[smartNr]": "?"
+                # "dane[chartDay]": date.strftime("%d.%m.%Y"),
+                "dane[paramType]": "csv",
+                "dane[trybCSV]": "godzin",
+                "dane[startDay]": date.strftime("%d.%m.%Y"),
+                "dane[endDay]": date.strftime("%d.%m.%Y"),
                 "dane[checkOZE]": "on",
             },
         ).json()
@@ -62,15 +66,20 @@ class ELicznik:
     @staticmethod
     def _extract_values_with_timestamps(data):
         for element in data:
-            timestamp = datetime.datetime.strptime(element["Date"], "%Y-%m-%d").replace(hour=int(element["Hour"]) - 1)
-            timestamp += datetime.timedelta(hours=1)
+            date = element.get("Date")
+            hour = int(element.get("Hour"))
+            value = float(element.get("EC"))
+            # TODO: There's also an "Extra" field, which seems to be set to be set to "T" only for the one extra hour
+            # when switching from CEST to CET (e.g. 3 AM on 2021-10-31)
+            timestamp = datetime.datetime.strptime(date, "%Y-%m-%d")
+            timestamp += datetime.timedelta(hours=hour)
             value = element.get("EC")
             yield timestamp, value
 
     def get_readings(self, date):
-        data = self.get_raw_readings(date)
-        consumed = dict(self._extract_values_with_timestamps(data["dane"]["chart"].values()))
-        produced = dict(self._extract_values_with_timestamps(data["dane"]["OZE"].values()))
+        data = self.get_raw_readings(date).get("dane", {})
+        consumed = dict(self._extract_values_with_timestamps(data.get("chart", [])))
+        produced = dict(self._extract_values_with_timestamps(data.get("OZE", [])))
         return sorted((timestamp, float(consumed.get(timestamp)), float(produced.get(timestamp)))
                        for timestamp in set(consumed) | set(produced))
 
