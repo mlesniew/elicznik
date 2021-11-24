@@ -23,7 +23,7 @@ optional arguments:
 
 Example
 ```
-$ elicznik freddy@example.com secretpassword 10.7.2021
+$ elicznik freddy@example.com secretpassword 2021-07-10
 timestamp              consumed    produced
 -------------------  ----------  ----------
 2021-07-03 01:00:00       0.116       0

@@ -22,7 +22,7 @@ def main():
     parser.add_argument(
         "date",
         nargs="?",
-        type=lambda arg: datetime.datetime.strptime(arg, "%d.%m.%Y").date(),
+        type=datetime.date.fromisoformat,
         default=datetime.date.today() - datetime.timedelta(days=1),
         help="Date of data to be retrieved",
     )
