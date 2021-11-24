@@ -1,6 +1,7 @@
 import argparse
 import csv
 import datetime
+import json
 import sys
 
 import tabulate
@@ -32,7 +33,7 @@ def main():
     elicznik.login()
 
     if args.format == "raw":
-        print(elicznik.get_raw_readings(args.date))
+        print(json.dumps(elicznik.get_raw_readings(args.date), indent=4))
         return
 
     result = elicznik.get_readings(args.date)
