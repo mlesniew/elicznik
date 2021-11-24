@@ -21,7 +21,8 @@ optional arguments:
                         Specify the output format
 ```
 
-Example
+### Example
+
 ```
 $ elicznik freddy@example.com secretpassword 2021-07-10
 timestamp              consumed    produced
@@ -59,13 +60,11 @@ timestamp              consumed    produced
 import datetime
 import elicznik
 
-m = elicznik.ELicznik("freddy@example.com", "secretpassword")
-m.login()
+with elicznik.ELicznik("freddy@example.com", "secretpassword") as m:
+    readings = m.get_readings(datetime.date(2021, 7, 10))
 
-readings = m.get_readings(datetime.date(2021, 7, 10))
-
-for timestamp, consumed, produced in readings:
-    print(timestamp, consumed, produced)
+    for timestamp, consumed, produced in readings:
+        print(timestamp, consumed, produced)
 ```
 
 
@@ -81,7 +80,7 @@ for timestamp, consumed, produced in readings:
 
 This project is based on the excellent
 [tauron-elicznik-scrapper](https://github.com/MichalZaniewicz/tauron-elicznik-scraper) project by
-[@Michał Zaniewicz](https://github.com/MichalZaniewicz), but there are several other available out there.
+[Michał Zaniewicz](https://github.com/MichalZaniewicz), but there are several other available out there.
 
 Among the other [similar eLicznik projects on GitHub](https://github.com/search?q=elicznik) there's one especially
 worth checking out:

@@ -25,6 +25,13 @@ class ELicznik:
             },
         )
 
+    def __enter__(self):
+        self.login()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def get_raw_readings(self, date):
         return self.session.post(
             self.CHART_URL,

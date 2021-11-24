@@ -29,21 +29,19 @@ def main():
 
     args = parser.parse_args()
 
-    elicznik = ELicznik(args.username, args.password)
-    elicznik.login()
+    with ELicznik(args.username, args.password) as elicznik:
+        if args.format == "raw":
+            print(json.dumps(elicznik.get_raw_readings(args.date), indent=4))
+            return
 
-    if args.format == "raw":
-        print(json.dumps(elicznik.get_raw_readings(args.date), indent=4))
-        return
+        result = elicznik.get_readings(args.date)
 
-    result = elicznik.get_readings(args.date)
-
-    if args.format == "table":
-        print(tabulate.tabulate(result, headers=["timestamp", "consumed", "produced"]))
-    else:
-        writer = csv.writer(sys.stdout)
-        for timestamp, consumed, produced in result:
-            writer.writerow((timestamp.isoformat(), consumed, produced))
+        if args.format == "table":
+            print(tabulate.tabulate(result, headers=["timestamp", "consumed", "produced"]))
+        else:
+            writer = csv.writer(sys.stdout)
+            for timestamp, consumed, produced in result:
+                writer.writerow((timestamp.isoformat(), consumed, produced))
 
 
 if __name__ == "__main__":
