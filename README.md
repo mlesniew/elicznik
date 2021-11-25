@@ -4,6 +4,15 @@ This Python 3 package allows to read electric energy meter reading history from 
 [Tauron eLicznik](https://elicznik.tauron-dystrybucja.pl/) website.
 
 
+## Installation
+
+The package can be installed using pip:
+
+```
+$ pip3 install elicznik
+```
+
+
 ## Command line usage
 
 With the package installed readings can be retrieved by simply running the `elicznik` command:
