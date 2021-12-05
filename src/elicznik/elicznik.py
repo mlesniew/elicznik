@@ -32,7 +32,8 @@ class ELicznik:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def get_raw_readings(self, date):
+    def get_raw_readings(self, start_date, end_date=None):
+        end_date = end_date or start_date
         return self.session.post(
             self.CHART_URL,
             data={
@@ -40,8 +41,8 @@ class ELicznik:
                 # "dane[chartDay]": date.strftime("%d.%m.%Y"),
                 "dane[paramType]": "csv",
                 "dane[trybCSV]": "godzin",
-                "dane[startDay]": date.strftime("%d.%m.%Y"),
-                "dane[endDay]": date.strftime("%d.%m.%Y"),
+                "dane[startDay]": start_date.strftime("%d.%m.%Y"),
+                "dane[endDay]": end_date.strftime("%d.%m.%Y"),
                 "dane[checkOZE]": "on",
             },
         ).json()
@@ -59,8 +60,8 @@ class ELicznik:
             value = element.get("EC")
             yield timestamp, value
 
-    def get_readings(self, date):
-        data = self.get_raw_readings(date).get("dane", {})
+    def get_readings(self, start_date, end_date=None):
+        data = self.get_raw_readings(start_date, end_date).get("dane", {})
         consumed = dict(self._extract_values_with_timestamps(data.get("chart", [])))
         produced = dict(self._extract_values_with_timestamps(data.get("OZE", [])))
         return sorted(

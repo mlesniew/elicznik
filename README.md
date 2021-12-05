@@ -17,12 +17,15 @@ $ pip3 install elicznik
 
 With the package installed readings can be retrieved by simply running the `elicznik` command:
 ```
-usage: elicznik [-h] [--format {raw,table,csv}] username password [date]
+usage: elicznik [-h] [--format {raw,table,csv}] username password [start date] [end date]
 
 positional arguments:
   username              tauron-dystrybucja.pl user name
   password              tauron-dystrybucja.pl password
-  date                  Date of data to be retrieved
+  start date            Start date of date range to be retrieved, in ISO8601 format. If the end date is omitted, it's the only date for which
+                        measurements are retrieved.
+  end date              End date of date range to be retrieved, inclusive, in ISO8601 format. Can be omitted to only retrieve a single day's
+                        measurements.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -70,7 +73,19 @@ import datetime
 import elicznik
 
 with elicznik.ELicznik("freddy@example.com", "secretpassword") as m:
-    readings = m.get_readings(datetime.date(2021, 7, 10))
+    # date range
+    print("July 2021")
+
+    readings = m.get_readings(datetime.date(2021, 7, 1), datetime.date(2021, 7, 31))
+
+    for timestamp, consumed, produced in readings:
+        print(timestamp, consumed, produced)
+
+    # single day
+    print("Yesterday")
+
+    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+    readings = m.get_readings(yesterday)
 
     for timestamp, consumed, produced in readings:
         print(timestamp, consumed, produced)
@@ -81,7 +96,6 @@ with elicznik.ELicznik("freddy@example.com", "secretpassword") as m:
 
 * Add support for accounts with multiple meters
 * Convert the dates to UTC and handle switches from and to DST properly
-* Allow reading a date range instead of just one day
 * Make the dependency on tabulate optional
 
 
