@@ -52,7 +52,6 @@ class ELicznik:
         for element in data:
             date = element.get("Date")
             hour = int(element.get("Hour"))
-            value = float(element.get("EC"))
             # TODO: There's also an "Extra" field, which seems to be set to be set to "T" only for the one extra hour
             # when switching from CEST to CET (e.g. 3 AM on 2021-10-31)
             timestamp = datetime.datetime.strptime(date, "%Y-%m-%d")
