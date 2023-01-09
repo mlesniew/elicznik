@@ -20,7 +20,7 @@ def main():
     parser.add_argument("username", help="tauron-dystrybucja.pl user name")
     parser.add_argument("password", help="tauron-dystrybucja.pl password")
     parser.add_argument(
-        "start date",
+        "start_date",
         nargs="?",
         type=datetime.date.fromisoformat,
         default=datetime.date.today() - datetime.timedelta(days=1),
@@ -29,7 +29,7 @@ def main():
         "measurements are retrieved.",
     )
     parser.add_argument(
-        "end date",
+        "end_date",
         nargs="?",
         type=datetime.date.fromisoformat,
         default=None,
