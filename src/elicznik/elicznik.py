@@ -4,6 +4,7 @@ import datetime
 
 from .session import Session
 from collections import defaultdict
+import csv
 
 class ELicznik:
     LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
@@ -91,15 +92,10 @@ class ELicznik:
         ).content.decode()
 
     def get_data(self, start_date, end_date=None):
-        raw_data = self.get_raw_data(start_date, end_date).split('\n')[1:]
+        data = csv.reader(self.get_raw_data(start_date, end_date), delimiter=';')
         cons = defaultdict(float)
         prod = defaultdict(float)
-        for l in raw_data:
-            print(l)
-            try:
-                t, v, r = l.split(';')[:3]
-            except ValueError:
-                continue
+        for t, v, r, *_ in data[1:]:
             date, hour = t.split()
             h, m = hour.split(':')
             timestamp = datetime.datetime.strptime(date, "%d.%m.%Y")
@@ -108,7 +104,8 @@ class ELicznik:
                 cons[timestamp] = v
             elif r=='oddanie':
                 prod[timestamp] = v
-                pass
+            else :
+                print('Unknown data format:', l)
         # TODO
         # This probably drops the data from the double hour during DST change
         # Needs to be investigated and fixed
