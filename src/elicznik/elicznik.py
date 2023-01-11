@@ -8,10 +8,8 @@ import csv
 
 class ELicznik:
     LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
-    CHART_URL = "https://elicznik.tauron-dystrybucja.pl/index/charts"
-    URL_ENERGY = "https://elicznik.tauron-dystrybucja.pl/energia/api"
-    URL_READINGS = "https://elicznik.tauron-dystrybucja.pl/odczyty/api"
-    CHART_URL = URL_ENERGY
+    CHART_URL = "https://elicznik.tauron-dystrybucja.pl/energia/api"
+    READINGS_URL = "https://elicznik.tauron-dystrybucja.pl/odczyty/api"
     DATA_URL = "https://elicznik.tauron-dystrybucja.pl/energia/do/dane"
 
     def __init__(self, username, password):
@@ -37,27 +35,19 @@ class ELicznik:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def get_raw_readings(self, start_date, end_date=None):
+    def _get_raw_readings(self, type_, start_date, end_date=None):
         end_date = end_date or start_date
-        return self.session.post(
+        data = self.session.post(
             self.CHART_URL,
             data={
-                # "dane[smartNr]": "?"
-                # "dane[chartDay]": date.strftime("%d.%m.%Y"),
-                # "dane[paramType]": "csv",
-                # "dane[trybCSV]": "godzin",
-                # "dane[startDay]": start_date.strftime("%d.%m.%Y"),
-                # "dane[endDay]": end_date.strftime("%d.%m.%Y"),
-                # "dane[checkOZE]": "on",
+                "type": type_,
                 "from": start_date.strftime("%d.%m.%Y"),
-                "to" : end_date.strftime("%d.%m.%Y"),
+                "to": end_date.strftime("%d.%m.%Y"),
                 "profile": "full time",
-                "type": "consum",
             },
         ).json()
 
-    @staticmethod
-    def _extract_values_with_timestamps(data):
+        data = data.get("data", {}).get("allData", {})
         for element in data:
             date = element.get("Date")
             hour = int(element.get("Hour"))
@@ -68,10 +58,15 @@ class ELicznik:
             value = element.get("EC")
             yield timestamp, value
 
+    def get_readings_production(self, start_date, end_date=None):
+        return dict(self._get_raw_readings("oze", start_date, end_date))
+
+    def get_readings_consumption(self, start_date, end_date=None):
+        return dict(self._get_raw_readings("consum", start_date, end_date))
+
     def get_readings(self, start_date, end_date=None):
-        data = self.get_raw_readings(start_date, end_date).get("dane", {})
-        consumed = dict(self._extract_values_with_timestamps(data.get("chart", [])))
-        produced = dict(self._extract_values_with_timestamps(data.get("OZE", [])))
+        consumed = self.get_readings_consumption(start_date, end_date)
+        produced = self.get_readings_production(start_date, end_date)
         return sorted(
             (timestamp, float(consumed.get(timestamp)), float(produced.get(timestamp)))
             for timestamp in set(consumed) | set(produced)
