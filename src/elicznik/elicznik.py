@@ -74,6 +74,8 @@ class ELicznik:
 
     def get_raw_data(self, start_date, end_date=None):
         end_date = end_date or start_date
+        if start_date == end_date:
+            start_date -= datetime.timedelta(days=1)
         return self.session.post(
             self.DATA_URL,
             data={
@@ -87,6 +89,7 @@ class ELicznik:
         ).content.decode().split('\n')
 
     def get_data(self, start_date, end_date=None):
+        end_date = end_date or start_date
         data = csv.reader(self.get_raw_data(start_date, end_date)[1:], delimiter=';')
         cons = defaultdict(float)
         prod = defaultdict(float)
@@ -100,6 +103,10 @@ class ELicznik:
             h, m = hour.split(':')
             timestamp = datetime.datetime.strptime(date, "%d.%m.%Y")
             timestamp += datetime.timedelta(hours=int(h), minutes=int(m))
+            # Skip records outside a single day block
+            if start_date == end_date and timestamp.day != start_date.day:
+                print(f'Skip {timestamp} not within {start_date}.')
+                continue
             v = v.replace(',','.')
             if r=='pobór':
                 cons[timestamp] = v
