@@ -17,3 +17,4 @@ __pycache__/
 config-local.ini
 data_*.csv
 examples/data/
+examples/out/
