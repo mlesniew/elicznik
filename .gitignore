@@ -16,3 +16,4 @@ __pycache__/
 # Local config (user/pass) and example data
 config-local.ini
 data_*.csv
+data/
