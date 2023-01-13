@@ -25,9 +25,9 @@ with elicznik.ELicznik(username, password) as m:
     #     print(l.split(';'))
 
     # single day
-    print("Yesterday")
+    print("Day before yesterday")
 
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+    yesterday = datetime.date.today() - datetime.timedelta(days=2)
     readings = m.get_data(yesterday)
 
     for timestamp, consumed, produced in readings:

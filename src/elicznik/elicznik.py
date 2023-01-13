@@ -84,17 +84,23 @@ class ELicznik:
                 "form[oze]": 1,
                 "form[fileType]": "CSV", # or "XLS"
             },
-        ).content.decode()
+        ).content.decode().split('\n')
 
     def get_data(self, start_date, end_date=None):
-        data = csv.reader(self.get_raw_data(start_date, end_date), delimiter=';')
+        data = csv.reader(self.get_raw_data(start_date, end_date)[1:], delimiter=';')
         cons = defaultdict(float)
         prod = defaultdict(float)
-        for t, v, r, *_ in data[1:]:
+        for rec in data:
+            try :
+                t, v, r, *_ = rec
+            except ValueError:
+                # print('ValueError:', rec)
+                continue
             date, hour = t.split()
             h, m = hour.split(':')
             timestamp = datetime.datetime.strptime(date, "%d.%m.%Y")
             timestamp += datetime.timedelta(hours=int(h), minutes=int(m))
+            v = v.replace(',','.')
             if r=='pobór':
                 cons[timestamp] = v
             elif r=='oddanie':

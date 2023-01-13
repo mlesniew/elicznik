@@ -13,5 +13,6 @@ __pycache__/
 .tox
 .cache
 
-# Local config (user/pass)
+# Local config (user/pass) and example data
 config-local.ini
+data_*.csv
