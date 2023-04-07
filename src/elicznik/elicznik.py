@@ -61,6 +61,6 @@ class ELicznik:
         consumed = self.get_readings_consumption(start_date, end_date)
         produced = self.get_readings_production(start_date, end_date)
         return sorted(
-            (timestamp, float(consumed.get(timestamp)), float(produced.get(timestamp)))
+            (timestamp, consumed.get(timestamp), produced.get(timestamp))
             for timestamp in set(consumed) | set(produced)
         )
