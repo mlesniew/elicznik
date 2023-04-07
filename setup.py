@@ -7,7 +7,7 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='elicznik',
-    version='1.3.1',
+    version='1.4.0',
     description='Tauron eLicznik scrapper',
     long_description=long_description,
     long_description_content_type='text/markdown',
