@@ -5,7 +5,7 @@ import sys
 
 import tabulate
 
-from .elicznik import ELicznik
+from .elicznik import ELicznikChart, ELicznikCSV
 
 
 def main():
@@ -15,6 +15,12 @@ def main():
         choices=["table", "csv"],
         default="table",
         help="Specify the output format",
+    )
+    parser.add_argument(
+        "--api",
+        choices=["chart", "csv"],
+        default="csv",
+        help="Specify which Tauron API to use to get the measurements. "
     )
     parser.add_argument("username", help="tauron-dystrybucja.pl user name")
     parser.add_argument("password", help="tauron-dystrybucja.pl password")
@@ -39,7 +45,9 @@ def main():
 
     args = parser.parse_args()
 
-    with ELicznik(args.username, args.password) as elicznik:
+    elicznik_class = ELicznikCSV if args.api == "csv" else ELicznikChart
+
+    with elicznik_class(args.username, args.password) as elicznik:
         result = elicznik.get_readings(args.start_date, args.end_date)
 
         if args.format == "table":
