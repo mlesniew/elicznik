@@ -17,21 +17,22 @@ $ pip3 install elicznik
 
 With the package installed readings can be retrieved by simply running the `elicznik` command:
 ```
-usage: elicznik [-h] [--format {raw,table,csv}] username password [start date] [end date]
+usage: elicznik [-h] [--format {table,csv}] [--api {chart,csv}] username password [start_date] [end_date]
 
 positional arguments:
   username              tauron-dystrybucja.pl user name
   password              tauron-dystrybucja.pl password
-  start date            Start date of date range to be retrieved, in ISO8601 format. If the end date is omitted, it's the only date for which
+  start_date            Start date of date range to be retrieved, in ISO8601 format. If the end date is omitted, it's the only date for which
                         measurements are retrieved.
-  end date              End date of date range to be retrieved, inclusive, in ISO8601 format. Can be omitted to only retrieve a single day's
+  end_date              End date of date range to be retrieved, inclusive, in ISO8601 format. Can be omitted to only retrieve a single day's
                         measurements.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --format {raw,table,csv}
-                        Specify the output format
+  --format {table,csv}  Specify the output format
+  --api {chart,csv}     Specify which Tauron API to use to get the measurements.
 ```
+
 
 ### Example
 
@@ -89,6 +90,32 @@ with elicznik.ELicznik("freddy@example.com", "secretpassword") as m:
 
     for timestamp, consumed, produced in readings:
         print(timestamp, consumed, produced)
+```
+
+
+## Notes on APIs and the `--api` command line switch
+
+Tauron exposes two API endpoints for retrieving meter readings -- one for downloading CSV (and XLS) data,
+the other is a back-end supporting the charts in the Web UI.  In theory, both endpoints are equivalent.
+They can be used to get exactly the same data.  In practice, the endpoint for downloading CSV data seems
+more stable -- in contrast to the chart one, which changed a few times in the past.  The CSV endpoint is
+also more robust and allows downloading more data with fewer requests.
+
+This project supports fetching data from both.  CSV is the default and recommended one, but it's possible
+to switch to the chart API endpoint in case of problems.
+
+This can be done by adding `--api=chart` on the command line:
+```
+$ elicznik --api=chart freddy@example.com secretpassword 2021-07-10
+```
+
+Both APIs can also be used explicitly from code.  The `elicznik` module defines two classes for that `ELicznikChart`
+and `ELicznikCSV`.  `ELicznik` is just an alias for `ELicznikCSV`:
+```
+import elicznik
+
+with elicznik.ELicznikChart("freddy@example.com", "secretpassword") as m:
+    ...
 ```
 
 
