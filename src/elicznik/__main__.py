@@ -1,7 +1,6 @@
 import argparse
 import csv
 import datetime
-import json
 import sys
 
 import tabulate
@@ -13,7 +12,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--format",
-        choices=["raw", "table", "csv"],
+        choices=["table", "csv"],
         default="table",
         help="Specify the output format",
     )
@@ -41,24 +40,11 @@ def main():
     args = parser.parse_args()
 
     with ELicznik(args.username, args.password) as elicznik:
-        if args.format == "raw":
-            print(
-                json.dumps(
-                    elicznik.get_raw_readings(
-                        args.start_date, args.end_date
-                    ),
-                    indent=4,
-                )
-            )
-            return
-
         result = elicznik.get_readings(args.start_date, args.end_date)
 
         if args.format == "table":
             print(
-                tabulate.tabulate(
-                    result, headers=["timestamp", "consumed", "produced"]
-                )
+                tabulate.tabulate(result, headers=["timestamp", "consumed", "produced"])
             )
         else:
             writer = csv.writer(sys.stdout)

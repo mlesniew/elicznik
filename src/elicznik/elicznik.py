@@ -35,28 +35,24 @@ class ELicznik:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def _get_raw_readings(self, type_, start_date, end_date=None):
-        end_date = end_date or start_date
+    def _get_raw_daily_readings(self, type_, date):
         data = self.session.post(
             self.CHART_URL,
             data={
                 "type": type_,
-                "from": start_date.strftime("%d.%m.%Y"),
-                "to": end_date.strftime("%d.%m.%Y"),
+                "from": date.strftime("%d.%m.%Y"),
+                "to": date.strftime("%d.%m.%Y"),
                 "profile": "full time",
             },
-        ).json()
+        ).json().get("data", {}).get("values", [])
 
-        data = data.get("data", {}).get("allData", {})
-        for element in data:
-            date = element.get("Date")
-            hour = int(element.get("Hour"))
-            # TODO: There's also an "Extra" field, which seems to be set to be set to "T" only for the one extra hour
-            # when switching from CEST to CET (e.g. 3 AM on 2021-10-31)
-            timestamp = datetime.datetime.strptime(date, "%Y-%m-%d")
-            timestamp += datetime.timedelta(hours=hour)
-            value = element.get("EC")
-            yield timestamp, value
+        return ((datetime.datetime.combine(date, datetime.time(h)), value) for h, value in enumerate(data))
+
+    def _get_raw_readings(self, type_, start_date, end_date=None):
+        end_date = end_date or start_date
+        while start_date <= end_date:
+            yield from self._get_raw_daily_readings(type_, start_date)
+            start_date += datetime.timedelta(days=1)
 
     def get_readings_production(self, start_date, end_date=None):
         return dict(self._get_raw_readings("oze", start_date, end_date))
@@ -68,7 +64,7 @@ class ELicznik:
         consumed = self.get_readings_consumption(start_date, end_date)
         produced = self.get_readings_production(start_date, end_date)
         return sorted(
-            (timestamp, float(consumed.get(timestamp)), float(produced.get(timestamp)))
+            (timestamp, consumed.get(timestamp), produced.get(timestamp))
             for timestamp in set(consumed) | set(produced)
         )
 
