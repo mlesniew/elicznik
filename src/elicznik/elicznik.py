@@ -74,9 +74,9 @@ class ELicznikCSV(ELicznikBase):
 
     def _get_raw_data(self, start_date, end_date=None):
         end_date = end_date or start_date
-        return self.session.post(
+        return self.session.get(
             self.DATA_URL,
-            data={
+            params={
                 "form[from]": start_date.strftime("%d.%m.%Y"),
                 "form[to]": end_date.strftime("%d.%m.%Y"),
                 "form[type]": "godzin",  # or "dzien"
