@@ -20,7 +20,7 @@ def main():
         "--api",
         choices=["chart", "csv"],
         default="csv",
-        help="Specify which Tauron API to use to get the measurements. "
+        help="Specify which Tauron API to use to get the measurements. ",
     )
     parser.add_argument("username", help="tauron-dystrybucja.pl user name")
     parser.add_argument("password", help="tauron-dystrybucja.pl password")
@@ -52,7 +52,16 @@ def main():
 
         if args.format == "table":
             print(
-                tabulate.tabulate(result, headers=["timestamp", "consumed", "produced"])
+                tabulate.tabulate(
+                    result,
+                    headers=[
+                        "timestamp",
+                        "consumed",
+                        "produced",
+                        "net consumption",
+                        "net production",
+                    ],
+                )
             )
         else:
             writer = csv.writer(sys.stdout)

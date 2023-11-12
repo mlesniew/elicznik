@@ -5,6 +5,7 @@ import datetime
 
 from .session import Session
 
+
 class ELicznikBase:
     LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
 
@@ -36,17 +37,25 @@ class ELicznikChart(ELicznikBase):
     CHART_URL = "https://elicznik.tauron-dystrybucja.pl/energia/api"
 
     def _get_raw_daily_readings(self, type_, date):
-        data = self.session.post(
-            self.CHART_URL,
-            data={
-                "type": type_,
-                "from": date.strftime("%d.%m.%Y"),
-                "to": date.strftime("%d.%m.%Y"),
-                "profile": "full time",
-            },
-        ).json().get("data", {}).get("values", [])
+        data = (
+            self.session.post(
+                self.CHART_URL,
+                data={
+                    "type": type_,
+                    "from": date.strftime("%d.%m.%Y"),
+                    "to": date.strftime("%d.%m.%Y"),
+                    "profile": "full time",
+                },
+            )
+            .json()
+            .get("data", {})
+            .get("values", [])
+        )
 
-        return ((datetime.datetime.combine(date, datetime.time(h)), value) for h, value in enumerate(data))
+        return (
+            (datetime.datetime.combine(date, datetime.time(h)), value)
+            for h, value in enumerate(data)
+        )
 
     def _get_raw_readings(self, type_, start_date, end_date=None):
         end_date = end_date or start_date
@@ -54,18 +63,22 @@ class ELicznikChart(ELicznikBase):
             yield from self._get_raw_daily_readings(type_, start_date)
             start_date += datetime.timedelta(days=1)
 
-    def get_readings_production(self, start_date, end_date=None):
-        return dict(self._get_raw_readings("oze", start_date, end_date))
-
-    def get_readings_consumption(self, start_date, end_date=None):
-        return dict(self._get_raw_readings("consum", start_date, end_date))
-
     def get_readings(self, start_date, end_date=None):
-        consumed = self.get_readings_consumption(start_date, end_date)
-        produced = self.get_readings_production(start_date, end_date)
+        COLUMNS = ["consum", "oze", "netto", "netto_oze"]
+
+        results = {
+            name: dict(self._get_raw_readings(name, start_date, end_date))
+            for name in COLUMNS
+        }
+
+        timestamps = set(sum((list(v) for v in results.values()), start=[]))
+
+        # TODO
+        # This probably drops the data from the double hour during DST change
+        # Needs to be investigated and fixed
         return sorted(
-            (timestamp, consumed.get(timestamp), produced.get(timestamp))
-            for timestamp in set(consumed) | set(produced)
+            tuple([timestamp] + [results[name].get(timestamp) for name in COLUMNS])
+            for timestamp in timestamps
         )
 
 
@@ -80,8 +93,10 @@ class ELicznikCSV(ELicznikBase):
                 "form[from]": start_date.strftime("%d.%m.%Y"),
                 "form[to]": end_date.strftime("%d.%m.%Y"),
                 "form[type]": "godzin",  # or "dzien"
-                "form[consum]": 1,
-                "form[oze]": 1,
+                "form[energy][consum]": 1,
+                "form[energy][oze]": 1,
+                "form[energy][netto]": 1,
+                "form[energy][netto_oze]": 1,
                 "form[fileType]": "CSV",  # or "XLS"
             },
         ).text.splitlines()
@@ -90,7 +105,9 @@ class ELicznikCSV(ELicznikBase):
     def _parse_timestamp(timespec):
         date, time = timespec.split(None, 1)
         hour = int(time.split(":")[0]) - 1
-        return datetime.datetime.strptime(date, "%Y-%m-%d") + datetime.timedelta(hours=hour)
+        return datetime.datetime.strptime(date, "%Y-%m-%d") + datetime.timedelta(
+            hours=hour
+        )
 
     def get_readings(self, start_date, end_date=None):
         end_date = end_date or start_date
@@ -111,23 +128,29 @@ class ELicznikCSV(ELicznikBase):
             rec for rec in records if start_date <= rec["timestamp"].date() <= end_date
         ]
 
-        prod = {
-            rec["timestamp"]: rec["value"]
-            for rec in records
-            if rec["type"] == "oddanie"
+        COLUMNS = [
+            "pobór",
+            "oddanie",
+            "pobrana po zbilansowaniu",
+            "oddana po zbilansowaniu",
+        ]
+
+        results = {
+            name: {
+                rec["timestamp"]: rec["value"] for rec in records if rec["type"] == name
+            }
+            for name in COLUMNS
         }
-        cons = {
-            rec["timestamp"]: rec["value"]
-            for rec in records
-            if rec["type"] == "pobór"
-        }
+
+        timestamps = set(sum((list(v) for v in results.values()), start=[]))
 
         # TODO
         # This probably drops the data from the double hour during DST change
         # Needs to be investigated and fixed
         return sorted(
-            (timestamp, cons.get(timestamp), prod.get(timestamp))
-            for timestamp in set(cons) | set(prod)
+            tuple([timestamp] + [results[name].get(timestamp) for name in COLUMNS])
+            for timestamp in timestamps
         )
+
 
 ELicznik = ELicznikCSV
