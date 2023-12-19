@@ -4,6 +4,15 @@ import ssl
 import requests
 
 
+def _handle_ban_and_auth(r:requests.Request, *args, **kwargs):
+    if r.url == "https://elicznik.tauron-dystrybucja.pl/blokada":
+        raise RuntimeError("you have been baned")
+
+    if r.url == "https://logowanie.tauron-dystrybucja.pl/login":
+        if 'Login lub has' in r.text:
+            raise RuntimeError("invalid login or password")
+
+
 # Workaround for https://github.com/psf/requests/issues/4775
 class TLSAdapter(requests.adapters.HTTPAdapter):
     def init_poolmanager(self, connections, maxsize, block=False):
@@ -22,4 +31,5 @@ class TLSAdapter(requests.adapters.HTTPAdapter):
 class Session(requests.Session):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.hooks={ "response": [_handle_ban_and_auth] }
         self.mount("https://", TLSAdapter())
