@@ -65,8 +65,8 @@ def main():
             )
         else:
             writer = csv.writer(sys.stdout)
-            for timestamp, consumed, produced in result:
-                writer.writerow((timestamp.isoformat(), consumed, produced))
+            for timestamp, consumed, produced, net_consumed, net_produced in result:
+                writer.writerow((timestamp.isoformat(), consumed, produced, net_consumed, net_produced))
 
 
 if __name__ == "__main__":
