@@ -4,13 +4,15 @@ import ssl
 import requests
 
 
-def _handle_ban_and_auth(r:requests.Request, *args, **kwargs):
-    if r.url == "https://elicznik.tauron-dystrybucja.pl/blokada":
-        raise RuntimeError("you have been baned")
+LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
+BLOCK_URL = "https://elicznik.tauron-dystrybucja.pl/blokada"
 
-    if r.url == "https://logowanie.tauron-dystrybucja.pl/login":
-        if 'Login lub has' in r.text:
-            raise RuntimeError("invalid login or password")
+def _handle_ban_and_auth(r:requests.Request, *args, **kwargs):
+    if r.url == BLOCK_URL:
+        raise RuntimeError("you have been banned")
+
+    if r.url == LOGIN_URL and 'Login lub has' in r.text:
+        raise RuntimeError("invalid login or password")
 
 
 # Workaround for https://github.com/psf/requests/issues/4775
