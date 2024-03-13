@@ -11,6 +11,11 @@ The package can be installed using pip:
 ```
 $ pip3 install elicznik
 ```
+or optionally:
+```
+$ pip3 install git@github.com:mlesniew/elicznik.git
+```
+
 
 
 ## Command line usage
