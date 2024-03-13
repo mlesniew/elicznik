@@ -27,6 +27,7 @@ usage: elicznik [-h] [--format {table,csv}] [--api {chart,csv}] username passwor
 positional arguments:
   username              tauron-dystrybucja.pl user name
   password              tauron-dystrybucja.pl password
+  site                  tauron-dystrybucja site. XXXXXXXXX_YYYYYYYY_ZZZZZZ format. 
   start_date            Start date of date range to be retrieved, in ISO8601 format. If the end date is omitted, it's the only date for which
                         measurements are retrieved.
   end_date              End date of date range to be retrieved, inclusive, in ISO8601 format. Can be omitted to only retrieve a single day's
@@ -42,7 +43,7 @@ options:
 ### Example
 
 ```
-$ elicznik freddy@example.com secretpassword 2022-07-20
+$ elicznik freddy@example.com secretpassword optional_site_identifier 2022-07-20
 timestamp              consumed    produced    net consumption    net production
 -------------------  ----------  ----------  -----------------  ----------------
 2022-07-20 00:00:00       0.133       0                  0.133             0
@@ -78,7 +79,7 @@ timestamp              consumed    produced    net consumption    net production
 import datetime
 import elicznik
 
-with elicznik.ELicznik("freddy@example.com", "secretpassword") as m:
+with elicznik.ELicznik("freddy@example.com", "secretpassword", "optional_site_identifier") as m:
     # date range
     print("July 2021")
 
