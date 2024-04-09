@@ -22,7 +22,7 @@ $ pip3 install git@github.com:mlesniew/elicznik.git
 
 With the package installed readings can be retrieved by simply running the `elicznik` command:
 ```
-usage: elicznik [-h] [--format {table,csv}] [--api {chart,csv}] username password [start_date] [end_date]
+usage: elicznik [-h] [--format {table,csv}] [--api {chart,csv}] [--site [SITE]] username password [start_date] [end_date]
 
 positional arguments:
   username              tauron-dystrybucja.pl user name
@@ -36,7 +36,7 @@ options:
   -h, --help            show this help message and exit
   --format {table,csv}  Specify the output format
   --api {chart,csv}     Specify which Tauron API to use to get the measurements.
-  --site                tauron-dystrybucja site. XXXXXXXXX_YYYYYYYY_ZZZZZZ format.
+  --site [SITE]         tauron-dystrybucja site id. XXXXXXXXX_YYYYYYYY_ZZZZZZ format.
 ```
 
 
