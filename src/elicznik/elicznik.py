@@ -9,7 +9,7 @@ from .session import Session
 class ELicznikBase:
     LOGIN_URL = "https://logowanie.tauron-dystrybucja.pl/login"
 
-    def __init__(self, username, password, site):
+    def __init__(self, username, password, site=None):
         self.username = username
         self.password = password
         self.site = site
@@ -25,7 +25,7 @@ class ELicznikBase:
                 "service": "https://elicznik.tauron-dystrybucja.pl",
             },
         )
-        if self.site != None:
+        if self.site is not None:
             self.session.post(
                 "https://elicznik.tauron-dystrybucja.pl/ustaw_punkt",
                 data={

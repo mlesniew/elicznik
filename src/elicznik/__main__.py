@@ -22,6 +22,13 @@ def main():
         default="csv",
         help="Specify which Tauron API to use to get the measurements. ",
     )
+    parser.add_argument(
+        "--site",
+        nargs="?",
+        type=str,
+        default=None,
+        help="tauron-dystrybucja site id. XXXXXXXXX_YYYYYYYY_ZZZZZZ format.",
+    )
     parser.add_argument("username", help="tauron-dystrybucja.pl user name")
     parser.add_argument("password", help="tauron-dystrybucja.pl password")
     parser.add_argument(
@@ -47,7 +54,7 @@ def main():
 
     elicznik_class = ELicznikCSV if args.api == "csv" else ELicznikChart
 
-    with elicznik_class(args.username, args.password) as elicznik:
+    with elicznik_class(args.username, args.password, args.site) as elicznik:
         result = elicznik.get_readings(args.start_date, args.end_date)
 
         if args.format == "table":
