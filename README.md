@@ -104,8 +104,8 @@ with elicznik.ELicznik("freddy@example.com", "secretpassword", "optional_site_id
 
     readings = m.get_readings(datetime.date(2021, 7, 1), datetime.date(2021, 7, 31))
 
-    for timestamp, consumed, produced in readings:
-        print(timestamp, consumed, produced)
+    for timestamp, consumed, produced, consumed_net, produced_net in readings:
+        print(timestamp, consumed, produced, consumed_net, produced_net)
 
     # single day
     print("Yesterday")
@@ -113,8 +113,8 @@ with elicznik.ELicznik("freddy@example.com", "secretpassword", "optional_site_id
     yesterday = datetime.date.today() - datetime.timedelta(days=1)
     readings = m.get_readings(yesterday)
 
-    for timestamp, consumed, produced in readings:
-        print(timestamp, consumed, produced)
+    for timestamp, consumed, produced, consumed_net, produced_net in readings:
+        print(timestamp, consumed, produced, consumed_net, produced_net)
 ```
 
 

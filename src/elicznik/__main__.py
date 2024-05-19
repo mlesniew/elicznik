@@ -71,8 +71,8 @@ def main():
                     result,
                     headers=[
                         "timestamp",
-                        "consumed",
-                        "produced",
+                        "consumption",
+                        "production",
                         "net consumption",
                         "net production",
                     ],

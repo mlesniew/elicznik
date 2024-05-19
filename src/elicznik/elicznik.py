@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
+import collections
 import csv
 import datetime
 
 from .session import Session
+
+
+Reading = collections.namedtuple("Reading", "timestamp consumption production net_consumption net_production")
 
 
 class ELicznikBase:
@@ -85,7 +89,7 @@ class ELicznikChart(ELicznikBase):
         # This probably drops the data from the double hour during DST change
         # Needs to be investigated and fixed
         return sorted(
-            tuple([timestamp] + [results[name].get(timestamp) for name in COLUMNS])
+            Reading(*([timestamp] + [results[name].get(timestamp) for name in COLUMNS]))
             for timestamp in timestamps
         )
 
@@ -156,7 +160,7 @@ class ELicznikCSV(ELicznikBase):
         # This probably drops the data from the double hour during DST change
         # Needs to be investigated and fixed
         return sorted(
-            tuple([timestamp] + [results[name].get(timestamp) for name in COLUMNS])
+            Reading(*([timestamp] + [results[name].get(timestamp) for name in COLUMNS]))
             for timestamp in timestamps
         )
 
