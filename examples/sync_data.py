@@ -43,8 +43,9 @@ if miss:
         for mts in sorted(miss):
             print(mts)
             readings = m.get_data(mts)
-            for ts, consumed, produced in readings:
-                data[mts.strftime("%Y.%m.%d")][ts]=(consumed, produced)
+            for ts, consumed, produced, netconsum, netprod in readings:
+                if consumed is not None or produced is not None:
+                    data[mts.strftime("%Y.%m.%d")][ts]=(consumed, produced)
                 # print(ts, consumed, produced)
 if data:
     print('Writing data')
