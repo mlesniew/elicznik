@@ -12,3 +12,9 @@ __pycache__/
 # due to using tox and pytest
 .tox
 .cache
+
+# Local config (user/pass) and example data
+config-local.ini
+data_*.csv
+examples/data/
+examples/out/
