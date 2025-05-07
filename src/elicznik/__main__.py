@@ -2,10 +2,19 @@ import argparse
 import csv
 import datetime
 import sys
+import re
 
 import tabulate
 
-from .elicznik import ELicznik
+from .elicznik import ELicznikChart, ELicznikCSV
+
+SITE_ID_PATTERN = "[0-9]+_[0-9]+_[0-9]+"
+
+def parse_site(site):
+    match = re.match(SITE_ID_PATTERN, site)
+    if not match:
+        raise ValueError
+    return match.string
 
 
 def main():
@@ -15,6 +24,18 @@ def main():
         choices=["table", "csv"],
         default="table",
         help="Specify the output format",
+    )
+    parser.add_argument(
+        "--api",
+        choices=["chart", "csv"],
+        default="csv",
+        help="Specify which Tauron API to use to get the measurements",
+    )
+    parser.add_argument(
+        "--site",
+        type=parse_site,
+        default=None,
+        help=f"site identifier, must match '{SITE_ID_PATTERN}'",
     )
     parser.add_argument("username", help="tauron-dystrybucja.pl user name")
     parser.add_argument("password", help="tauron-dystrybucja.pl password")
@@ -39,17 +60,28 @@ def main():
 
     args = parser.parse_args()
 
-    with ELicznik(args.username, args.password) as elicznik:
+    elicznik_class = ELicznikCSV if args.api == "csv" else ELicznikChart
+
+    with elicznik_class(args.username, args.password, args.site) as elicznik:
         result = elicznik.get_readings(args.start_date, args.end_date)
 
         if args.format == "table":
             print(
-                tabulate.tabulate(result, headers=["timestamp", "consumed", "produced"])
+                tabulate.tabulate(
+                    result,
+                    headers=[
+                        "timestamp",
+                        "consumption",
+                        "production",
+                        "net consumption",
+                        "net production",
+                    ],
+                )
             )
         else:
             writer = csv.writer(sys.stdout)
-            for timestamp, consumed, produced in result:
-                writer.writerow((timestamp.isoformat(), consumed, produced))
+            for timestamp, consumed, produced, net_consumed, net_produced in result:
+                writer.writerow((timestamp.isoformat(), consumed, produced, net_consumed, net_produced))
 
 
 if __name__ == "__main__":

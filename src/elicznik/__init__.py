@@ -1,1 +1,1 @@
-from .elicznik import ELicznik
+from .elicznik import ELicznik, ELicznikChart, ELicznikCSV
