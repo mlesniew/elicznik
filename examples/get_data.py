@@ -32,9 +32,9 @@ with elicznik.ELicznik(username, password) as m:
         tsi = tsf-datetime.timedelta(weeks=4)
         print(f'{tsi} -> {tsf}')
 
-        readings = m.get_data(tsi, tsf)
+        readings = m.get_readings(tsi, tsf)
 
-        for ts, consumed, produced in readings:
+        for ts, consumed, produced, netcons, netprod in readings:
             data[ts.strftime("%Y.%m.%d")][ts]=(consumed, produced)
             # print(ts, consumed, produced)
 
