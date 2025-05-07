@@ -14,10 +14,10 @@ with elicznik.ELicznik(username, password) as m:
     # date range
     print("July 2021")
 
-    readings = m.get_data(datetime.date(2022, 7, 1), datetime.date(2022, 7, 2))
+    readings = m.get_readings(datetime.date(2022, 7, 1), datetime.date(2022, 7, 2))
 
-    for timestamp, consumed, produced in readings:
-        print(timestamp, consumed, produced)
+    for timestamp, consumed, produced, netcons, netprod in readings:
+        print(timestamp, consumed, produced, netcons, netprod)
 
     # for l in readings.split('\n'):
     #     # timestamp, consumed, produced = split
@@ -28,7 +28,7 @@ with elicznik.ELicznik(username, password) as m:
     print("Day before yesterday")
 
     yesterday = datetime.date.today() - datetime.timedelta(days=2)
-    readings = m.get_data(yesterday)
+    readings = m.get_readings(yesterday)
 
-    for timestamp, consumed, produced in readings:
-        print(timestamp, consumed, produced)
+    for timestamp, consumed, produced, netcons, netprod in readings:
+        print(timestamp, consumed, produced, netcons, netprod)
