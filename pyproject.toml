@@ -1,0 +1,45 @@
+[project]
+name = "elicznik"
+description = "Tauron eLicznik scrapper"
+readme = "README.md"
+requires-python = ">=3.6,<4"
+dependencies = [
+    "requests",
+    "tabulate",
+]
+authors = [
+    { name = "Michał Leśniewski", email = "mlesniew@gmail.com" }
+]
+license = "MIT"
+keywords = ["elicznik", "tauron", "scrapper"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Topic :: Home Automation",
+    "Topic :: Internet",
+    "Topic :: Utilities",
+]
+dynamic = ["version"]
+
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/mlesniew/elicznik"
+
+[project.scripts]
+elicznik = "elicznik.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
