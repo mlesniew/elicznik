@@ -145,8 +145,8 @@ class ELicznikCSV(ELicznikBase):
         records = [
             {
                 "timestamp": self._parse_timestamp(rec["Data"]),
-                "value": float(rec[" Wartość kWh"].replace(",", ".")),
-                "type": rec["Rodzaj"],
+                "value": float(rec[" Wartość "].replace(",", ".")),
+                "type": rec["Rodzaj"].replace(" [kWh]", ""),
             }
             for rec in csv.DictReader(data, delimiter=";")
         ]
