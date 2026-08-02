@@ -3,6 +3,7 @@
 import collections
 import csv
 import datetime
+import re
 
 from .session import Session
 from collections import defaultdict
@@ -21,14 +22,30 @@ class ELicznikBase:
 
     def login(self):
         self.session = Session()
-        self.session.get(self.LOGIN_URL)
+        SERVICE_URL = "https://elicznik.tauron-dystrybucja.pl"
+
+        # Step 1: GET login page with service parameter to get Keycloak form
+        r1 = self.session.get(f"{self.LOGIN_URL}?service={SERVICE_URL}", allow_redirects=True)
+
+        # Step 2: Extract Keycloak form action URL
+        form_match = re.search(
+            r'<form[^>]+id="kc-form-login"[^>]+action="([^"]+)"',
+            r1.text,
+        )
+        if form_match is None:
+            raise RuntimeError("Keycloak login form not found")
+
+        form_action = form_match.group(1).replace("&amp;", "&")
+
+        # Step 3: POST credentials to Keycloak form action URL
         self.session.post(
-            self.LOGIN_URL,
+            form_action,
             data={
                 "username": self.username,
                 "password": self.password,
-                "service": "https://elicznik.tauron-dystrybucja.pl",
+                "credentialId": "",
             },
+            allow_redirects=True,
         )
         if self.site is not None:
             self.session.post(
@@ -129,8 +146,8 @@ class ELicznikCSV(ELicznikBase):
         records = [
             {
                 "timestamp": self._parse_timestamp(rec["Data"]),
-                "value": float(rec[" Wartość kWh"].replace(",", ".")),
-                "type": rec["Rodzaj"],
+                "value": float(rec[" Wartość "].replace(",", ".")),
+                "type": rec["Rodzaj"].replace(" [kWh]", ""),
             }
             for rec in csv.DictReader(data, delimiter=";")
         ]
