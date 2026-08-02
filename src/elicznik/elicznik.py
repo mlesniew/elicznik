@@ -6,7 +6,8 @@ import datetime
 import re
 
 from .session import Session
-
+from collections import defaultdict
+import csv
 
 Reading = collections.namedtuple("Reading", "timestamp consumption production net_consumption net_production")
 
