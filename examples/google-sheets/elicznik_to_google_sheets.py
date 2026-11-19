@@ -170,15 +170,14 @@ def main():
 
     print(f"Downloading eLicznik data for {start_date} to {end_date}...")
     with elicznik.ELicznik(args.login, args.password) as licznik:
-        elicznik_readings = [
-            (dt - datetime.timedelta(hours=1), c, p)
-            for dt, c, p in licznik.get_readings(start_date, end_date)
-        ]
+        elicznik_readings = licznik.get_readings(start_date, end_date)
     print(f"Got {len(elicznik_readings)} data points.")
 
+    # Timestamps mark the start of each hour (00:00 to 23:00), so the hour
+    # maps straight to the 0..23 column headers.
     data = {
-        "eLicznik Produkcja": {dt: p for dt, c, p in elicznik_readings},
-        "eLicznik Konsumpcja": {dt: c for dt, c, p in elicznik_readings},
+        "eLicznik Produkcja": {r.timestamp: r.production for r in elicznik_readings},
+        "eLicznik Konsumpcja": {r.timestamp: r.consumption for r in elicznik_readings},
     }
 
     print("Updating spreadsheet...")
