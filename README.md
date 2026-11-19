@@ -23,26 +23,10 @@ $ pip3 install git@github.com:mlesniew/elicznik.git
 
 With the package installed readings can be retrieved by simply running the `elicznik` command:
 ```
-usage: elicznik [-h] [--format {table,csv}] [--api {chart,csv}] [--site SITE] username password [start_date] [end_date]
-
-positional arguments:
-  username              tauron-dystrybucja.pl user name
-  password              tauron-dystrybucja.pl password
-  start_date            Start date of date range to be retrieved, in ISO8601 format. If the end date is omitted, it's the only date for which measurements are retrieved.
-  end_date              End date of date range to be retrieved, inclusive, in ISO8601 format. Can be omitted to only retrieve a single day's measurements.
-
-options:
-  -h, --help            show this help message and exit
-  --format {table,csv}  Specify the output format
-  --api {chart,csv}     Specify which Tauron API to use to get the measurements
-  --site SITE           site identifier, must match '[0-9]+_[0-9]+_[0-9]+'
-(venv) ~/src/elicznik (site) $ elicznik --help | cat
 usage: elicznik [-h] [--format {table,csv}] [--api {chart,csv}] [--site SITE]
-                username password [start_date] [end_date]
+                [-u USERNAME] [start_date] [end_date]
 
 positional arguments:
-  username              tauron-dystrybucja.pl user name
-  password              tauron-dystrybucja.pl password
   start_date            Start date of date range to be retrieved, in ISO8601
                         format. If the end date is omitted, it's the only date
                         for which measurements are retrieved.
@@ -56,13 +40,24 @@ options:
   --api {chart,csv}     Specify which Tauron API to use to get the
                         measurements
   --site SITE           site identifier, must match '[0-9]+_[0-9]+_[0-9]+'
+  -u, --username USERNAME
+                        tauron-dystrybucja.pl user name (default:
+                        $ELICZNIK_USERNAME, prompted for if unset)
 ```
 
+### Credentials
+
+The password is never passed on the command line (where it would end up in
+shell history and be visible to other users in `ps`).  It is read from the
+`ELICZNIK_PASSWORD` environment variable, or prompted for interactively if
+that variable is not set.  The user name can be given with `--username`, the
+`ELICZNIK_USERNAME` environment variable, or typed in at the prompt.
 
 ### Example
 
 ```
-$ elicznik freddy@example.com secretpassword 2022-07-20
+$ elicznik -u freddy@example.com 2022-07-20
+Password:
 timestamp              consumed    produced    net consumption    net production
 -------------------  ----------  ----------  -----------------  ----------------
 2022-07-20 00:00:00       0.133       0                  0.133             0
@@ -131,7 +126,7 @@ to switch to the chart API endpoint in case of problems.
 
 This can be done by adding `--api=chart` on the command line:
 ```
-$ elicznik --api=chart freddy@example.com secretpassword 2021-07-10
+$ elicznik --api=chart -u freddy@example.com 2021-07-10
 ```
 
 Both APIs can also be used explicitly from code.  The `elicznik` module defines two classes for that `ELicznikChart`

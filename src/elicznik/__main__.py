@@ -1,6 +1,8 @@
 import argparse
 import csv
 import datetime
+import getpass
+import os
 import sys
 import re
 
@@ -37,8 +39,13 @@ def main():
         default=None,
         help=f"site identifier, must match '{SITE_ID_PATTERN}'",
     )
-    parser.add_argument("username", help="tauron-dystrybucja.pl user name")
-    parser.add_argument("password", help="tauron-dystrybucja.pl password")
+    parser.add_argument(
+        "-u",
+        "--username",
+        default=os.environ.get("ELICZNIK_USERNAME"),
+        help="tauron-dystrybucja.pl user name "
+        "(default: $ELICZNIK_USERNAME, prompted for if unset)",
+    )
     parser.add_argument(
         "start_date",
         nargs="?",
@@ -60,9 +67,17 @@ def main():
 
     args = parser.parse_args()
 
+    # The password is deliberately not accepted as a command line argument,
+    # because that would leak it to shell history and process listings.
+    username = args.username
+    if not username:
+        print("Username: ", end="", file=sys.stderr, flush=True)
+        username = input()
+    password = os.environ.get("ELICZNIK_PASSWORD") or getpass.getpass()
+
     elicznik_class = ELicznikCSV if args.api == "csv" else ELicznikChart
 
-    with elicznik_class(args.username, args.password, args.site) as elicznik:
+    with elicznik_class(username, password, args.site) as elicznik:
         result = elicznik.get_readings(args.start_date, args.end_date)
 
         if args.format == "table":
