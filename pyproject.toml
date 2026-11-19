@@ -1,29 +1,35 @@
-[build-system]
-requires = ["setuptools>=69"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "elicznik"
-version = "3.0.0"
 description = "Tauron eLicznik hourly energy readings: Python client and CLI"
 readme = "README.md"
-license = "MIT"
-license-files = ["LICENSE"]
-authors = [{ name = "Michał Leśniewski", email = "mlesniew@gmail.com" }]
 requires-python = ">=3.10"
-dependencies = ["requests>=2.28", "tzdata; sys_platform == 'win32'"]
+dependencies = [
+    "requests>=2.28",
+    "tzdata; sys_platform == 'win32'",
+]
+authors = [
+    { name = "Michał Leśniewski", email = "mlesniew@gmail.com" }
+]
+license = "MIT"
 keywords = ["elicznik", "tauron", "energy", "scraper"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
     "Topic :: Home Automation",
+    "Topic :: Internet",
     "Topic :: Utilities",
 ]
+dynamic = ["version"]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
 
 [project.urls]
 Homepage = "https://github.com/mlesniew/elicznik"
@@ -31,8 +37,15 @@ Homepage = "https://github.com/mlesniew/elicznik"
 [project.scripts]
 elicznik = "elicznik.cli:main"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

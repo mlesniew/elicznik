@@ -1,6 +1,11 @@
 """Tauron eLicznik hourly energy readings: Python client and CLI."""
 
-__version__ = "3.0.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("elicznik")
+except PackageNotFoundError:  # running from a source checkout
+    __version__ = "0.0.0"
 
 from .client import Client
 from .config import Credentials, load_credentials, read_env_file
