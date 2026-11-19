@@ -6,11 +6,10 @@ upload them to a defined Google Sheets spreadsheet.  The script can be
 run periodically to update the spreadsheet with new readings without
 overwriting the old ones.
 
-The Google Sheets ID and the Tauron eLicznik login and password can be
-provided on the command line or by setting the ELICZNIK_GOOGLE_SHEETS_ID,
-ELICZNIK_LOGIN and ELICZNIK_PASSWORD environment variables respectively.
-Values passed in the command line take precedence over the environment
-variables if both are present.
+Tauron credentials are read the same way as by the elicznik CLI: from the
+ELICZNIK_USERNAME, ELICZNIK_PASSWORD and ELICZNIK_SITE environment variables
+or a .env file.  The Google Sheets ID is given on the command line or with
+the ELICZNIK_GOOGLE_SHEETS_ID environment variable.
 
 A Google service account needs to be set up as described at
 https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account
@@ -149,36 +148,37 @@ def main():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
-        "--login", help="Tauron login", default=os.getenv("ELICZNIK_LOGIN")
+        "sheet",
+        nargs="?",
+        help="Google Sheet ID",
+        default=os.getenv("ELICZNIK_GOOGLE_SHEETS_ID"),
     )
-    parser.add_argument(
-        "--password", help="Tauron password", default=os.getenv("ELICZNIK_PASSWORD")
-    )
-    parser.add_argument(
-        "sheet", help="Google Sheet ID", default=os.getenv("ELICZNIK_GOOGLE_SHEETS_ID")
-    )
+    parser.add_argument("--env-file", help="read Tauron credentials from this file")
     parser.add_argument(
         "--days", default=5, type=int, help="Number of past days to retrieve"
     )
     args = parser.parse_args()
 
-    if not args.login or not args.password:
-        raise SystemExit("No login or password provided.")
+    if not args.sheet:
+        raise SystemExit("No Google Sheet ID provided.")
+    credentials = elicznik.load_credentials(env_file=args.env_file)
 
     end_date = datetime.date.today()
     start_date = end_date - datetime.timedelta(days=args.days)
 
     print(f"Downloading eLicznik data for {start_date} to {end_date}...")
-    with elicznik.ELicznik(args.login, args.password) as licznik:
-        elicznik_readings = licznik.get_readings(start_date, end_date)
+    with elicznik.Client.from_credentials(credentials) as client:
+        elicznik_readings = client.readings(start_date, end_date)
     print(f"Got {len(elicznik_readings)} data points.")
 
-    # Timestamps mark the start of each hour (00:00 to 23:00), so the hour
-    # maps straight to the 0..23 column headers.
-    data = {
-        "eLicznik Produkcja": {r.timestamp: r.production for r in elicznik_readings},
-        "eLicznik Konsumpcja": {r.timestamp: r.consumption for r in elicznik_readings},
-    }
+    # Columns are local hours 0..23.  On the autumn DST day the repeated
+    # hour is summed into one cell.
+    data = {"eLicznik Produkcja": {}, "eLicznik Konsumpcja": {}}
+    for r in elicznik_readings:
+        key = (r.local_start.date(), r.local_start.hour)
+        for title, value in (("eLicznik Produkcja", r.production), ("eLicznik Konsumpcja", r.consumption)):
+            if value is not None:
+                data[title][key] = data[title].get(key, 0) + value
 
     print("Updating spreadsheet...")
     gc = gspread.service_account()
@@ -189,7 +189,7 @@ def main():
 
         print(f"Updating worksheet '{sheet_title}'...")
         for date in date_range(start_date, end_date):
-            values = {dt.hour: v for dt, v in sheet_data.items() if dt.date() == date}
+            values = {h: v for (d, h), v in sheet_data.items() if d == date}
             if not values:
                 print(f"No values for {date}, skipping...")
                 continue

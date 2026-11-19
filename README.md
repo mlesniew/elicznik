@@ -1,157 +1,125 @@
-# Tauron eLicznik Scraper
+# Tauron eLicznik
 
-This Python 3 package allows to read electric energy meter reading history from the 
-[Tauron eLicznik](https://elicznik.tauron-dystrybucja.pl/) website.
+Python client and command line tool that downloads hourly energy readings from
+[Tauron eLicznik](https://elicznik.tauron-dystrybucja.pl/): consumption, production and
+their balanced (net) values, in kWh.
 
+Output is designed to be consumed by other programs: JSON Lines by default, UTC timestamps,
+data on stdout, logs on stderr, and distinct exit codes.
 
 ## Installation
 
-The package can be installed using pip:
-
 ```
-$ pip3 install elicznik
+pip install elicznik
 ```
 
-or alternatively:
-```
-$ pip3 install git@github.com:mlesniew/elicznik.git
-```
+Requires Python 3.10+.
 
+## Credentials
 
-
-## Command line usage
-
-With the package installed readings can be retrieved by simply running the `elicznik` command:
-```
-usage: elicznik [-h] [--format {table,csv}] [--api {chart,csv}] [--site SITE]
-                [-u USERNAME] [start_date] [end_date]
-
-positional arguments:
-  start_date            Start date of date range to be retrieved, in ISO8601
-                        format. If the end date is omitted, it's the only date
-                        for which measurements are retrieved.
-  end_date              End date of date range to be retrieved, inclusive, in
-                        ISO8601 format. Can be omitted to only retrieve a
-                        single day's measurements.
-
-options:
-  -h, --help            show this help message and exit
-  --format {table,csv}  Specify the output format
-  --api {chart,csv}     Specify which Tauron API to use to get the
-                        measurements
-  --site SITE           site identifier, must match '[0-9]+_[0-9]+_[0-9]+'
-  -u, --username USERNAME
-                        tauron-dystrybucja.pl user name (default:
-                        $ELICZNIK_USERNAME, prompted for if unset)
-```
-
-### Credentials
-
-The password is never passed on the command line (where it would end up in
-shell history and be visible to other users in `ps`).  It is read from the
-`ELICZNIK_PASSWORD` environment variable, or prompted for interactively if
-that variable is not set.  The user name can be given with `--username`, the
-`ELICZNIK_USERNAME` environment variable, or typed in at the prompt.
-
-### Example
+Copy [`.env.example`](.env.example) to `.env` and fill it in:
 
 ```
-$ elicznik -u freddy@example.com 2022-07-20
-Password:
-timestamp              consumed    produced    net consumption    net production
--------------------  ----------  ----------  -----------------  ----------------
-2022-07-20 00:00:00       0.133       0                  0.133             0
-2022-07-20 01:00:00       0.127       0                  0.127             0
-2022-07-20 02:00:00       0.119       0                  0.119             0
-2022-07-20 03:00:00       0.119       0                  0.119             0
-2022-07-20 04:00:00       0.124       0                  0.124             0
-2022-07-20 05:00:00       0.02        0.226              0                 0.206
-2022-07-20 06:00:00       0           1.058              0                 1.058
-2022-07-20 07:00:00       0.086       1.607              0                 1.521
-2022-07-20 08:00:00       0           2.09               0                 2.09
-2022-07-20 09:00:00       0           2.302              0                 2.302
-2022-07-20 10:00:00       0.223       2.427              0                 2.204
-2022-07-20 11:00:00       0.031       2.723              0                 2.692
-2022-07-20 12:00:00       0           2.818              0                 2.818
-2022-07-20 13:00:00       0           2.735              0                 2.735
-2022-07-20 14:00:00       0           2.413              0                 2.413
-2022-07-20 15:00:00       0           1.953              0                 1.953
-2022-07-20 16:00:00       0.316       1.407              0                 1.091
-2022-07-20 17:00:00       0.183       1.2                0                 1.017
-2022-07-20 18:00:00       0.001       0.843              0                 0.842
-2022-07-20 19:00:00       0.446       0.274              0.172             0
-2022-07-20 20:00:00       0.712       0                  0.712             0
-2022-07-20 21:00:00       0.225       0                  0.225             0
-2022-07-20 22:00:00       0.207       0                  0.207             0
-2022-07-20 23:00:00       0.15        0                  0.15              0
+ELICZNIK_USERNAME=freddy@example.com
+ELICZNIK_PASSWORD=change-me
+ELICZNIK_SITE=
 ```
 
+`ELICZNIK_SITE` (metering point, format `123_456_789`) is only needed for accounts with
+several meters.
 
-## API usage
+Values are resolved in this order: command line flags (`--username`, `--site`), environment
+variables, the `.env` file (`./.env`, or `--env-file PATH`), then an interactive prompt when
+running in a terminal. The password is never accepted as a command line argument.
+
+## Command line
 
 ```
-import datetime
+elicznik [START] [END] [--days N] [-f jsonl|json|csv|table] [-o FILE]
+         [-u USERNAME] [--site SITE] [--env-file PATH] [-v | -q]
+```
+
+| Argument | Meaning |
+| --- | --- |
+| `START` `END` | Local days (`YYYY-MM-DD`), inclusive. Default: yesterday. |
+| `--days N` | The last N days, ending yesterday. |
+| `-f`, `--format` | `jsonl` (default), `json`, `csv` or `table`. |
+| `-o`, `--output` | Write to a file atomically instead of stdout. |
+
+```
+$ elicznik 2022-07-20
+{"start": "2022-07-19T22:00:00Z", "end": "2022-07-19T23:00:00Z", "local_start": "2022-07-20T00:00:00+02:00", "consumption": 0.133, "production": 0.0, "net_consumption": 0.133, "net_production": 0.0}
+...
+
+$ elicznik --days 7 | jq -s 'map(.consumption // 0) | add'
+42.517
+
+$ elicznik 2022-07-20 -f table
+local time             consumption  production  net cons.  net prod.
+---------------------  -----------  ----------  ---------  ---------
+2022-07-20 00:00 CEST        0.133       0.000      0.133      0.000
+...
+```
+
+### Output
+
+Every format uses the same fields:
+
+| Field | Description |
+| --- | --- |
+| `start`, `end` | Hour boundaries, ISO 8601 UTC. |
+| `local_start` | Hour start in `Europe/Warsaw`, with offset. |
+| `consumption` | Energy taken from the grid (kWh). |
+| `production` | Energy fed into the grid (kWh). |
+| `net_consumption` | Taken after hourly balancing (kWh). |
+| `net_production` | Fed in after hourly balancing (kWh). |
+
+Values not yet published by Tauron are `null` (empty in CSV). DST days have 23 or 25 hourly records.
+`--format json` wraps the records in `{"site", "from", "to", "unit", "timezone", "readings"}`.
+
+### Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success |
+| 1 | Unexpected error |
+| 2 | Invalid arguments or missing credentials |
+| 3 | Invalid username or password |
+| 4 | Rate limited or account temporarily blocked |
+| 5 | Unexpected response from Tauron |
+
+## Python API
+
+```python
+from datetime import date
 import elicznik
 
-with elicznik.ELicznik("freddy@example.com", "secretpassword", "optional_site_identifier") as m:
-    # date range
-    print("July 2021")
-
-    readings = m.get_readings(datetime.date(2021, 7, 1), datetime.date(2021, 7, 31))
-
-    for timestamp, consumed, produced, consumed_net, produced_net in readings:
-        print(timestamp, consumed, produced, consumed_net, produced_net)
-
-    # single day
-    print("Yesterday")
-
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
-    readings = m.get_readings(yesterday)
-
-    for timestamp, consumed, produced, consumed_net, produced_net in readings:
-        print(timestamp, consumed, produced, consumed_net, produced_net)
+credentials = elicznik.load_credentials()  # environment / .env
+with elicznik.Client.from_credentials(credentials) as client:
+    for r in client.readings(date(2022, 7, 1), date(2022, 7, 31)):
+        print(r.local_start, r.consumption, r.production)
 ```
 
+`Client("user", "password", site=None)` can also be constructed directly. Readings are frozen
+dataclasses with a timezone-aware UTC `start`; `Reading.to_dict()` returns the output schema.
+Errors derive from `elicznik.ElicznikError` (`AuthError`, `RateLimitError`, `ResponseError`,
+`ConfigError`).
 
-## Notes on APIs and the `--api` command line switch
+See [`examples/google-sheets`](examples/google-sheets) for a script that syncs readings to a
+spreadsheet.
 
-Tauron exposes two API endpoints for retrieving meter readings -- one for downloading CSV (and XLS) data,
-the other is a back-end supporting the charts in the Web UI.  In theory, both endpoints are equivalent.
-They can be used to get exactly the same data.  In practice, the endpoint for downloading CSV data seems
-more stable -- in contrast to the chart one, which changed a few times in the past.  The CSV endpoint is
-also more robust and allows downloading more data with fewer requests.
+## Upgrading from 2.x
 
-This project supports fetching data from both.  CSV is the default and recommended one, but it's possible
-to switch to the chart API endpoint in case of problems.
+Version 3 is a rewrite. `ELicznik`, `ELicznikCSV` and `ELicznikChart` are replaced by `Client`,
+readings by the `Reading` dataclass with UTC timestamps, and the CLI defaults to JSON Lines
+(use `-f table` for the old view). The `--api` option is gone; only the CSV export is used.
 
-This can be done by adding `--api=chart` on the command line:
-```
-$ elicznik --api=chart -u freddy@example.com 2021-07-10
-```
+## Related projects
 
-Both APIs can also be used explicitly from code.  The `elicznik` module defines two classes for that `ELicznikChart`
-and `ELicznikCSV`.  `ELicznik` is just an alias for `ELicznikCSV`:
-```
-import elicznik
+- [tauron-elicznik-scraper](https://github.com/MichalZaniewicz/tauron-elicznik-scraper) by Michał Zaniewicz, which this project was originally based on.
+- [Tauron AMIplus sensor](https://github.com/PiotrMachowski/Home-Assistant-custom-components-Tauron-AMIplus): a Home Assistant integration.
+- [home-assistant-tauron-elicznik](https://github.com/UrbanskiDawid/home-assistant-tauron-elicznik): a minimal Home Assistant integration for hourly consumption.
 
-with elicznik.ELicznikChart("freddy@example.com", "secretpassword") as m:
-    ...
-```
+## License
 
-
-## TODO & bugs
-
-* Convert the dates to UTC and handle switches from and to DST properly
-* Make the dependency on tabulate optional
-
-
-## Similar projects
-
-This project is based on the excellent
-[tauron-elicznik-scrapper](https://github.com/MichalZaniewicz/tauron-elicznik-scraper) project by
-[Michał Zaniewicz](https://github.com/MichalZaniewicz), but there are several other available out there.
-
-Among the other [similar eLicznik projects on GitHub](https://github.com/search?q=elicznik) there's one especially
-worth checking out:
-the [Tauron AMIplus sensor](https://github.com/PiotrMachowski/Home-Assistant-custom-components-Tauron-AMIplus) -- it's
-an eLicznik Home Assistant integration.
+[MIT](LICENSE). Unofficial; not affiliated with TAURON.
